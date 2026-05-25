@@ -1,0 +1,14 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Generated index artifacts
+web/public/data/
+
+# macOS system files
+.DS_Store
+
+# Log files
+*.log
