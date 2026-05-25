@@ -98,9 +98,11 @@ scripts/
   build-index.ts         # CLI: chunk + embed → web/public/documents_encoded/
 web/                     # everything browser
   index.html             # landing page (Bootstrap)
-  chat_basic/index.html  # chat UI
+  chat_basic/index.html  # bare-bones chat UI (hand-rolled)
+  chat_pro/index.html    # polished chat UI (deep-chat web component)
   src/
-    main.ts              # UI entry, wires retrieve → generate
+    main.ts              # chat_basic entry, wires retrieve → generate
+    main-pro.ts          # chat_pro entry, same pipeline behind <deep-chat>
     index-loader.ts      # fetch chunks.json / embeddings.bin
     query-embedder.ts    # lazy-loads MiniLM in browser
     retriever.ts         # cosine top-K
