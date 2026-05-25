@@ -6,6 +6,7 @@ import {
 
 export const DEFAULT_MODEL = 'Llama-3.2-3B-Instruct-q4f16_1-MLC';
 export const SMALL_MODEL = 'Llama-3.2-1B-Instruct-q4f16_1-MLC';
+export const MOBILE_MODEL = 'Qwen2.5-0.5B-Instruct-q4f16_1-MLC';
 
 const SYSTEM_PROMPT = `You are a helpful assistant that answers questions strictly from the provided context.
 If the context does not contain the answer, say "I don't know based on the provided documents."

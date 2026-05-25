@@ -1,7 +1,8 @@
 import { IndexLoader, type Index } from './index-loader.ts';
 import { QueryEmbedder } from './query-embedder.ts';
 import { Retriever, type Hit } from './retriever.ts';
-import { Llm } from './llm.ts';
+import { Llm, DEFAULT_MODEL, MOBILE_MODEL } from './llm.ts';
+import { Device } from './device.ts';
 
 const TOP_K = 3;
 
@@ -23,7 +24,8 @@ class Main {
 
 	static renderUi(app: HTMLDivElement, index: Index): void {
 		const embedder = new QueryEmbedder();
-		const llm = new Llm();
+		const modelId = Device.isMobile() === true ? MOBILE_MODEL : DEFAULT_MODEL;
+		const llm = new Llm(modelId);
 		const sources = new Set(index.chunks.map((c) => c.source));
 
 		app.replaceChildren();
@@ -60,7 +62,7 @@ class Main {
 		const status = document.createElement('p');
 		status.style.color = '#888';
 		status.style.fontSize = '0.9em';
-		status.textContent = 'Ready. First question will download the LLM (~1.8GB, cached after).';
+		status.textContent = `Ready. First question downloads ${modelId} (cached after).`;
 		app.appendChild(status);
 
 		const answerSection = document.createElement('section');

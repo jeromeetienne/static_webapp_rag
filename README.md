@@ -84,9 +84,10 @@ Default model is set in [web/src/llm.ts](web/src/llm.ts):
 ```ts
 export const DEFAULT_MODEL = 'Llama-3.2-3B-Instruct-q4f16_1-MLC';
 export const SMALL_MODEL   = 'Llama-3.2-1B-Instruct-q4f16_1-MLC';
+export const MOBILE_MODEL  = 'Qwen2.5-0.5B-Instruct-q4f16_1-MLC';
 ```
 
-`SMALL_MODEL` (~0.7 GB) is a low-VRAM fallback. The full list of supported MLC models lives in `prebuiltAppConfig.model_list` in the [WebLLM repo](https://github.com/mlc-ai/web-llm/blob/main/src/config.ts).
+`SMALL_MODEL` (~0.7 GB) is a low-VRAM fallback. `MOBILE_MODEL` (~0.35 GB) is auto-selected on phones via a userAgent check in [web/src/device.ts](web/src/device.ts) — the 3B default would otherwise blow past WebGPU memory limits on most mobile chipsets. The full list of supported MLC models lives in `prebuiltAppConfig.model_list` in the [WebLLM repo](https://github.com/mlc-ai/web-llm/blob/main/src/config.ts).
 
 ## Project layout
 
