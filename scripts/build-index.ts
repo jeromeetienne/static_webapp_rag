@@ -5,7 +5,7 @@ import { ChunkDocs } from './chunk-docs.ts';
 
 const MODEL_ID = 'Xenova/all-MiniLM-L6-v2';
 const EMBEDDING_NDIM = 384;
-const DATA_DIR = Path.resolve(process.cwd(), 'public', 'data');
+const DATA_DIR = Path.resolve(process.cwd(), 'web', 'public', 'data');
 
 export class BuildIndex {
 	static async run(): Promise<void> {

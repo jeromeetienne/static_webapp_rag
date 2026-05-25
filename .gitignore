@@ -4,8 +4,8 @@ node_modules/
 # Build output
 dist/
 
-# Public data directory
-public/data/
+# Generated index artifacts
+web/public/data/
 
 # macOS system files
 .DS_Store
