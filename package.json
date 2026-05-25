@@ -8,10 +8,13 @@
 		"build": "tsc --noEmit && vite build",
 		"preview": "vite preview",
 		"chunk": "tsx scripts/chunk-docs.ts",
-		"build-index": "tsx scripts/build-index.ts"
+		"build-index": "tsx scripts/build-index.ts",
+		"predeploy": "npm run build-index && vite build --base=/static_webapp_rag/",
+		"deploy": "gh-pages -d dist"
 	},
 	"devDependencies": {
 		"@types/node": "^22.10.0",
+		"gh-pages": "^6.3.0",
 		"tsx": "^4.19.0",
 		"typescript": "^5.6.0",
 		"vite": "^6.0.0"
