@@ -21,12 +21,12 @@ export class IndexLoader {
 	static async load(): Promise<Index> {
 		const base = import.meta.env.BASE_URL;
 		const [chunksRes, embedRes, metaRes] = await Promise.all([
-			fetch(`${base}data/chunks.json`),
-			fetch(`${base}data/embeddings.bin`),
-			fetch(`${base}data/meta.json`),
+			fetch(`${base}documents_encoded/chunks.json`),
+			fetch(`${base}documents_encoded/embeddings.bin`),
+			fetch(`${base}documents_encoded/meta.json`),
 		]);
 		if (chunksRes.ok === false || embedRes.ok === false || metaRes.ok === false) {
-			throw new Error(`failed to fetch index files from ${base}data/ — did you run \`npm run build-index\`?`);
+			throw new Error(`failed to fetch index files from ${base}documents_encoded/ — did you run \`npm run build-index\`?`);
 		}
 		const meta = (await metaRes.json()) as Meta;
 		const chunks = (await chunksRes.json()) as Chunk[];

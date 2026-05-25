@@ -10,7 +10,7 @@ A purely static web app that answers questions about a fixed document set using 
 ┌──────────────────────────┐         ┌──────────────────────────────┐
 │ BUILD-TIME (Node)        │         │ RUNTIME (Browser)            │
 │                          │         │                              │
-│  docs/*.md               │         │  user question               │
+│  documents_original/*.md │         │  user question               │
 │    │                     │         │    │                         │
 │    ▼                     │         │    ▼                         │
 │  chunk + embed           │  ====>  │  embed query (same model)    │
@@ -21,7 +21,7 @@ A purely static web app that answers questions about a fixed document set using 
 │  embeddings.bin          │         │    ▼                         │
 │  meta.json               │         │  prompt LLM (WebLLM, WebGPU) │
 │                          │         │    │                         │
-│  → web/public/data/      │         │    ▼                         │
+│  → web/public/documents_encoded/      │         │    ▼                         │
 │                          │         │  streamed answer in UI       │
 └──────────────────────────┘         └──────────────────────────────┘
 ```
@@ -48,7 +48,7 @@ Same embedding model on both sides (`Xenova/all-MiniLM-L6-v2`, 384-dim) — vect
 
 ```sh
 npm install
-npm run build-index     # chunk + embed docs/ → web/public/data/
+npm run build-index     # chunk + embed documents_original/ → web/public/documents_encoded/
 npm run dev             # http://localhost:5173
 ```
 
@@ -58,13 +58,13 @@ Open the landing page, click **Try the chat**, ask a question. First query downl
 
 ### Adding your own documents
 
-Drop `.md` or `.txt` files into [docs/](docs/) and rerun:
+Drop `.md` or `.txt` files into [documents_original/](documents_original/) and rerun:
 
 ```sh
 npm run build-index
 ```
 
-Refresh the page; Vite serves `web/public/data/` directly, no rebuild step needed.
+Refresh the page; Vite serves `web/public/documents_encoded/` directly, no rebuild step needed.
 
 ### Tweaking chunking
 
@@ -91,10 +91,10 @@ export const SMALL_MODEL   = 'Llama-3.2-1B-Instruct-q4f16_1-MLC';
 ## Project layout
 
 ```
-docs/                    # source docs (input to build-index)
+documents_original/      # source docs (input to build-index)
 scripts/
   chunk-docs.ts          # CLI: print chunks (debugging)
-  build-index.ts         # CLI: chunk + embed → web/public/data/
+  build-index.ts         # CLI: chunk + embed → web/public/documents_encoded/
 web/                     # everything browser
   index.html             # landing page (Bootstrap)
   chat_basic/index.html  # chat UI
@@ -104,7 +104,7 @@ web/                     # everything browser
     query-embedder.ts    # lazy-loads MiniLM in browser
     retriever.ts         # cosine top-K
     llm.ts               # wraps @mlc-ai/web-llm
-  public/data/           # generated; gitignored
+  public/documents_encoded/   # generated; gitignored
 vite.config.ts           # root: 'web', multi-page input
 ```
 

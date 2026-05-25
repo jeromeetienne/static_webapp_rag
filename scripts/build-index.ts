@@ -5,7 +5,7 @@ import { ChunkDocs } from './chunk-docs.ts';
 
 const MODEL_ID = 'Xenova/all-MiniLM-L6-v2';
 const EMBEDDING_NDIM = 384;
-const DATA_DIR = Path.resolve(process.cwd(), 'web', 'public', 'data');
+const ENCODED_DIR = Path.resolve(process.cwd(), 'web', 'public', 'documents_encoded');
 
 export class BuildIndex {
 	static async run(): Promise<void> {
@@ -32,24 +32,24 @@ export class BuildIndex {
 		}
 		process.stderr.write('\n');
 
-		await Fs.promises.mkdir(DATA_DIR, { recursive: true });
+		await Fs.promises.mkdir(ENCODED_DIR, { recursive: true });
 		await Fs.promises.writeFile(
-			Path.join(DATA_DIR, 'chunks.json'),
+			Path.join(ENCODED_DIR, 'chunks.json'),
 			JSON.stringify(chunks),
 		);
 		await Fs.promises.writeFile(
-			Path.join(DATA_DIR, 'embeddings.bin'),
+			Path.join(ENCODED_DIR, 'embeddings.bin'),
 			Buffer.from(embeddings.buffer),
 		);
 		await Fs.promises.writeFile(
-			Path.join(DATA_DIR, 'meta.json'),
+			Path.join(ENCODED_DIR, 'meta.json'),
 			JSON.stringify(
 				{ model: MODEL_ID, dim: EMBEDDING_NDIM, count: chunks.length },
 				null,
 				2,
 			),
 		);
-		console.error(`wrote ${chunks.length} × ${EMBEDDING_NDIM} index to ${DATA_DIR}`);
+		console.error(`wrote ${chunks.length} × ${EMBEDDING_NDIM} index to ${ENCODED_DIR}`);
 	}
 }
 

@@ -5,7 +5,7 @@ node_modules/
 dist/
 
 # Generated index artifacts
-web/public/data/
+web/public/documents_encoded/
 
 # macOS system files
 .DS_Store

@@ -11,7 +11,7 @@ export type Chunk = {
 
 const CHUNK_SIZE = 500;
 const CHUNK_OVERLAP = 50;
-const DOCUMENTS_DIR = 'docs';
+const DOCUMENTS_DIR = 'documents_original';
 
 export class ChunkDocs {
 	static async run(): Promise<void> {
