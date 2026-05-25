@@ -7,23 +7,23 @@ A purely static web app that answers questions about a fixed document set using 
 ## How it works
 
 ```
-┌──────────────────────────┐         ┌──────────────────────────────┐
-│ BUILD-TIME (Node)        │         │ RUNTIME (Browser)            │
-│                          │         │                              │
-│  documents_original/*.md │         │  user question               │
-│    │                     │         │    │                         │
-│    ▼                     │         │    ▼                         │
-│  chunk + embed           │  ====>  │  embed query (same model)    │
-│  (MiniLM-L6-v2)          │         │    │                         │
-│    │                     │         │    ▼                         │
-│    ▼                     │         │  cosine top-K vs static idx  │
-│  chunks.json             │         │    │                         │
-│  embeddings.bin          │         │    ▼                         │
-│  meta.json               │         │  prompt LLM (WebLLM, WebGPU) │
-│                          │         │    │                         │
-│  → web/public/documents_encoded/      │         │    ▼                         │
-│                          │         │  streamed answer in UI       │
-└──────────────────────────┘         └──────────────────────────────┘
+┌─────────────────────────────┐         ┌──────────────────────────────┐
+│ BUILD-TIME (Node)           │         │ RUNTIME (Browser)            │
+│                             │         │                              │
+│  documents_original/*.md    │         │  user question               │
+│    │                        │         │    │                         │
+│    ▼                        │         │    ▼                         │
+│  chunk + embed              │  ====>  │  embed query (same model)    │
+│  (MiniLM-L6-v2)             │         │    │                         │
+│    │                        │         │    ▼                         │
+│    ▼                        │         │  cosine top-K vs static idx  │
+│  chunks.json                │         │    │                         │
+│  embeddings.bin             │         │    ▼                         │
+│  meta.json                  │         │  prompt LLM (WebLLM, WebGPU) │
+│                             │         │    │                         │
+│  → web/public/              │         │    ▼                         │
+│      documents_encoded/     │         │  streamed answer in UI       │
+└─────────────────────────────┘         └──────────────────────────────┘
 ```
 
 Same embedding model on both sides (`Xenova/all-MiniLM-L6-v2`, 384-dim) — vectors stay consistent. Retrieval is a plain cosine-similarity loop over a `Float32Array`; for tens of thousands of chunks this is fine without HNSW.
@@ -34,7 +34,9 @@ Same embedding model on both sides (`Xenova/all-MiniLM-L6-v2`, 384-dim) — vect
 |---|---|
 | Bundler / dev server | [Vite](https://vitejs.dev) + TypeScript |
 | Embeddings (Node + browser) | [`@huggingface/transformers`](https://github.com/huggingface/transformers.js) running `Xenova/all-MiniLM-L6-v2` |
-| LLM (browser only) | [`@mlc-ai/web-llm`](https://github.com/mlc-ai/web-llm) with `Llama-3.2-3B-Instruct-q4f16_1-MLC` |
+| LLM (browser only) | [`@mlc-ai/web-llm`](https://github.com/mlc-ai/web-llm) with `Llama-3.2-3B-Instruct-q4f16_1-MLC` (Qwen2.5-0.5B on mobile) |
+| Chat UI (`/chat_pro/`) | [`deep-chat`](https://github.com/OvidijusParsiunas/deep-chat) web component |
+| Chat UI (`/chat_basic/`) | hand-rolled DOM — no widget lib |
 | Landing page | Bootstrap 5.3 via CDN |
 | Deploy | [`gh-pages`](https://github.com/tschaub/gh-pages) → GitHub Pages |
 
@@ -42,7 +44,7 @@ Same embedding model on both sides (`Xenova/all-MiniLM-L6-v2`, 384-dim) — vect
 
 - Node 20.11+ (for `import.meta.dirname`)
 - A WebGPU-capable browser (Chrome / Edge 113+, recent Firefox Nightly, Safari TP)
-- ~2 GB free disk in the browser on first chat use (Llama 3.2 3B weights are cached after the first download)
+- Browser cache space for the LLM weights on first chat use: ~2 GB desktop (Llama 3.2 3B), ~400 MB mobile (Qwen2.5-0.5B auto-selected via userAgent)
 
 ## Quickstart
 
@@ -52,7 +54,7 @@ npm run build-index     # chunk + embed documents_original/ → web/public/docum
 npm run dev             # http://localhost:5173
 ```
 
-Open the landing page, click **Try the chat**, ask a question. First query downloads the embedding model (~25 MB) and then the LLM (~1.8 GB) — both are cached in the browser afterwards.
+Open the landing page, click **Try the chat** to hit `/chat_pro/` (the polished deep-chat variant). The bare-bones `/chat_basic/` is linked below the CTA. First query downloads the embedding model (~25 MB) and then the LLM (~1.8 GB on desktop, ~350 MB on mobile) — both are cached in the browser afterwards.
 
 ## Customizing
 
