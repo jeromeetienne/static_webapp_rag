@@ -1,166 +1,216 @@
-import 'deep-chat';
 import { IndexLoader, type Index } from './index-loader.ts';
 import { QueryEmbedder } from './query-embedder.ts';
-import { Retriever, type Hit } from './retriever.ts';
-import { Llm, DEFAULT_MODEL, MOBILE_MODEL } from './llm.ts';
+import { Retriever } from './retriever.ts';
+import {
+	Llm,
+	DEFAULT_MODEL,
+	MOBILE_MODEL,
+	type ChatHistoryMessage,
+} from './llm.ts';
 import { Device } from './device.ts';
 
 const TOP_K = 3;
 
-type DeepChatMessage = {
-	role: 'user' | 'ai';
-	text: string;
-};
-
-type DeepChatBody = {
-	messages: DeepChatMessage[];
-};
-
-type DeepChatSignals = {
-	onResponse: (r: { text?: string; error?: string }) => void;
-	onClose: () => void;
-};
-
-type DeepChatElement = HTMLElement & {
-	connect: unknown;
-	introMessage: unknown;
-	textInput: unknown;
-	style: CSSStyleDeclaration;
-};
-
 class MainPro {
+	private readonly index: Index;
+	private readonly embedder: QueryEmbedder;
+	private readonly llm: Llm;
+	private readonly modelId: string;
+	private readonly history: ChatHistoryMessage[] = [];
+	private readonly messagesEl: HTMLElement;
+	private readonly inputEl: HTMLInputElement;
+	private readonly buttonEl: HTMLButtonElement;
+	private readonly statusEl: HTMLElement;
+	private modelReady = false;
+
+	constructor(app: HTMLElement, index: Index) {
+		this.index = index;
+		this.embedder = new QueryEmbedder();
+		this.modelId =
+			Device.isMobile() === true ? MOBILE_MODEL : DEFAULT_MODEL;
+		this.llm = new Llm(this.modelId);
+
+		app.replaceChildren();
+
+		const card = document.createElement('div');
+		card.className = 'card shadow-sm flex-grow-1';
+		app.appendChild(card);
+
+		this.messagesEl = document.createElement('div');
+		this.messagesEl.className =
+			'card-body overflow-auto d-flex flex-column gap-2 bg-white';
+		this.messagesEl.style.minHeight = '0';
+		this.messagesEl.style.flex = '1 1 0';
+		card.appendChild(this.messagesEl);
+
+		const footer = document.createElement('div');
+		footer.className = 'card-footer bg-light';
+		card.appendChild(footer);
+
+		const form = document.createElement('form');
+		form.className = 'd-flex gap-2';
+		footer.appendChild(form);
+
+		this.inputEl = document.createElement('input');
+		this.inputEl.type = 'text';
+		this.inputEl.className = 'form-control';
+		this.inputEl.placeholder = 'Ask a question about the docs…';
+		this.inputEl.autocomplete = 'off';
+		form.appendChild(this.inputEl);
+
+		this.buttonEl = document.createElement('button');
+		this.buttonEl.type = 'submit';
+		this.buttonEl.className = 'btn btn-primary';
+		this.buttonEl.textContent = 'Send';
+		this.buttonEl.disabled = true;
+		form.appendChild(this.buttonEl);
+
+		this.statusEl = document.createElement('p');
+		this.statusEl.className = 'text-muted small mt-2 mb-0';
+		app.appendChild(this.statusEl);
+
+		form.addEventListener('submit', (e) => {
+			e.preventDefault();
+			const query = this.inputEl.value.trim();
+			if (query === '') return;
+			this.inputEl.value = '';
+			this.handleQuery(query).catch((err) => {
+				this.statusEl.textContent = `Error: ${err instanceof Error ? err.message : String(err)}`;
+				this.buttonEl.disabled = false;
+				this.inputEl.disabled = false;
+			});
+		});
+
+		this.inputEl.focus();
+
+		this.statusEl.textContent = `Loading LLM ${this.modelId}…`;
+		this.llm
+			.preload((msg) => {
+				if (this.modelReady === false) {
+					this.statusEl.textContent = `Loading LLM: ${msg}`;
+				}
+			})
+			.then(() => {
+				this.modelReady = true;
+				this.statusEl.textContent = `Model ${this.modelId} ready.`;
+				this.buttonEl.disabled = false;
+			})
+			.catch((err) => {
+				this.statusEl.textContent = `Model load failed: ${err instanceof Error ? err.message : String(err)}`;
+			});
+	}
+
 	static async run(): Promise<void> {
 		const app = document.querySelector<HTMLDivElement>('#app');
 		if (app === null) {
 			throw new Error('#app not found');
 		}
-		app.textContent = 'Loading index...';
+		app.textContent = 'Loading index…';
 		try {
 			const index = await IndexLoader.load();
-			MainPro.renderUi(app, index);
+			new MainPro(app, index);
 		} catch (err) {
 			app.textContent = `Error: ${err instanceof Error ? err.message : String(err)}`;
 			throw err;
 		}
 	}
 
-	static renderUi(app: HTMLDivElement, index: Index): void {
-		const embedder = new QueryEmbedder();
-		const modelId = Device.isMobile() === true ? MOBILE_MODEL : DEFAULT_MODEL;
-		const llm = new Llm(modelId);
+	private async handleQuery(query: string): Promise<void> {
+		this.buttonEl.disabled = true;
+		this.inputEl.disabled = true;
 
-		app.replaceChildren();
-		app.style.fontFamily = 'system-ui, sans-serif';
-		app.style.maxWidth = '900px';
-		app.style.margin = '20px auto';
-		app.style.padding = '0 16px';
+		this.appendUserBubble(query);
+		this.history.push({ role: 'user', content: query });
 
-		const h1 = document.createElement('h1');
-		h1.textContent = 'Static RAG — Chat Pro';
-		app.appendChild(h1);
+		const { bubble, textEl } = this.appendAssistantBubble();
+		textEl.textContent = '…';
 
-		const intro = document.createElement('p');
-		intro.style.color = '#555';
-		intro.style.fontSize = '0.9em';
-		intro.textContent = `${index.meta.count} chunks · model: ${modelId}. First question downloads the model (cached after).`;
-		app.appendChild(intro);
+		this.statusEl.textContent = 'Embedding query…';
+		const tEmbed = performance.now();
+		const vec = await this.embedder.embed(query);
+		const embedMs = (performance.now() - tEmbed).toFixed(0);
 
-		const sourcesEl = document.createElement('div');
-		const sourcesHeader = document.createElement('h2');
-		sourcesHeader.textContent = 'Retrieved sources';
-		sourcesHeader.style.fontSize = '1em';
-		sourcesHeader.style.color = '#444';
-		sourcesHeader.style.marginTop = '20px';
+		const hits = Retriever.topK(vec, this.index, TOP_K);
 
-		const chat = document.createElement('deep-chat') as DeepChatElement;
-		chat.style.width = '100%';
-		chat.style.height = '65vh';
-		chat.style.borderRadius = '8px';
-		chat.introMessage = {
-			text: `Ask a question about the ${index.meta.count} indexed chunks.`,
-		};
-		chat.textInput = {
-			placeholder: { text: 'Ask…' },
-		};
-		chat.connect = {
-			stream: true,
-			handler: (body: DeepChatBody, signals: DeepChatSignals) => {
-				MainPro.handleQuery(body, signals, index, embedder, llm, sourcesEl).catch(
-					(err) => {
-						signals.onResponse({
-							error: err instanceof Error ? err.message : String(err),
-						});
-					},
-				);
-			},
-		};
-		app.appendChild(chat);
-
-		app.appendChild(sourcesHeader);
-		app.appendChild(sourcesEl);
-	}
-
-	static async handleQuery(
-		body: DeepChatBody,
-		signals: DeepChatSignals,
-		index: Index,
-		embedder: QueryEmbedder,
-		llm: Llm,
-		sourcesEl: HTMLElement,
-	): Promise<void> {
-		const lastMessage = body.messages.at(-1);
-		const query = lastMessage?.text.trim() ?? '';
-		if (query === '') {
-			signals.onResponse({ error: 'empty query' });
-			return;
-		}
-
-		const vec = await embedder.embed(query);
-		const hits = Retriever.topK(vec, index, TOP_K);
-		MainPro.renderHits(sourcesEl, index, hits);
+		this.statusEl.textContent = `Retrieved ${hits.length} chunks (${embedMs}ms). Generating…`;
+		textEl.textContent = '';
 
 		const contextChunks = hits.map((h) => ({
-			text: index.chunks[h.index].text,
-			source: index.chunks[h.index].source,
+			text: this.index.chunks[h.index].text,
+			source: this.index.chunks[h.index].source,
 		}));
 
-		await llm.generate(
+		const priorHistory = this.history.slice(0, -1);
+
+		const tGen = performance.now();
+		let full = '';
+		await this.llm.generate(
 			query,
 			contextChunks,
-			(token) => signals.onResponse({ text: token }),
-			(_msg) => {
-				// deep-chat shows its own loading bubble; nothing to do here
+			(token) => {
+				full += token;
+				textEl.textContent = full;
+				this.scrollToBottom();
 			},
+			(msg) => {
+				this.statusEl.textContent = `Loading LLM: ${msg}`;
+			},
+			priorHistory,
 		);
-		signals.onClose();
+		const genMsNum = performance.now() - tGen;
+		const genMs = genMsNum.toFixed(0);
+		const charsPerSec = genMsNum > 0
+			? (full.length / (genMsNum / 1000)).toFixed(1)
+			: '0';
+
+		this.history.push({ role: 'assistant', content: full });
+		this.statusEl.textContent = `Done — embed ${embedMs}ms, generate ${genMs}ms (${charsPerSec} chars/sec).`;
+		this.buttonEl.disabled = false;
+		this.inputEl.disabled = false;
+		this.inputEl.focus();
+
+		bubble.classList.remove('opacity-75');
 	}
 
-	static renderHits(container: HTMLElement, index: Index, hits: Hit[]): void {
-		container.replaceChildren();
-		const ol = document.createElement('ol');
-		for (const hit of hits) {
-			const chunk = index.chunks[hit.index];
-			const li = document.createElement('li');
-			li.style.marginBottom = '12px';
+	private appendUserBubble(text: string): void {
+		const row = document.createElement('div');
+		row.className = 'd-flex justify-content-end';
 
-			const meta = document.createElement('div');
-			meta.style.color = '#666';
-			meta.style.fontSize = '0.85em';
-			meta.textContent = `${chunk.source} (score ${hit.score.toFixed(3)})`;
-			li.appendChild(meta);
+		const bubble = document.createElement('div');
+		bubble.className = 'bg-primary text-white rounded px-3 py-2';
+		bubble.style.maxWidth = '80%';
+		bubble.style.whiteSpace = 'pre-wrap';
+		bubble.textContent = text;
 
-			const pre = document.createElement('pre');
-			pre.style.whiteSpace = 'pre-wrap';
-			pre.style.background = '#f5f5f5';
-			pre.style.padding = '8px';
-			pre.style.margin = '4px 0';
-			pre.style.fontSize = '0.85em';
-			pre.textContent = chunk.text;
-			li.appendChild(pre);
+		row.appendChild(bubble);
+		this.messagesEl.appendChild(row);
+		this.scrollToBottom();
+	}
 
-			ol.appendChild(li);
-		}
-		container.appendChild(ol);
+	private appendAssistantBubble(): {
+		bubble: HTMLElement;
+		textEl: HTMLElement;
+	} {
+		const row = document.createElement('div');
+		row.className = 'd-flex justify-content-start';
+
+		const bubble = document.createElement('div');
+		bubble.className = 'bg-light border rounded px-3 py-2 opacity-75';
+		bubble.style.maxWidth = '80%';
+
+		const textEl = document.createElement('div');
+		textEl.style.whiteSpace = 'pre-wrap';
+		bubble.appendChild(textEl);
+
+		row.appendChild(bubble);
+		this.messagesEl.appendChild(row);
+		this.scrollToBottom();
+
+		return { bubble, textEl };
+	}
+
+	private scrollToBottom(): void {
+		this.messagesEl.scrollTop = this.messagesEl.scrollHeight;
 	}
 }
 

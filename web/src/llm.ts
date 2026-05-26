@@ -20,6 +20,11 @@ export type ContextChunk = {
 	source: string;
 };
 
+export type ChatHistoryMessage = {
+	role: 'user' | 'assistant';
+	content: string;
+};
+
 export class Llm {
 	private engine: MLCEngine | null = null;
 	private loading: Promise<MLCEngine> | null = null;
@@ -29,11 +34,16 @@ export class Llm {
 		this.model = model;
 	}
 
+	async preload(onProgress: ProgressHandler): Promise<void> {
+		await this.getEngine(onProgress);
+	}
+
 	async generate(
 		question: string,
 		contextChunks: ContextChunk[],
 		onToken: TokenHandler,
 		onProgress: ProgressHandler,
+		history: ChatHistoryMessage[] = [],
 	): Promise<string> {
 		const engine = await this.getEngine(onProgress);
 
@@ -46,6 +56,7 @@ export class Llm {
 		const stream = await engine.chat.completions.create({
 			messages: [
 				{ role: 'system', content: SYSTEM_PROMPT },
+				...history,
 				{ role: 'user', content: userMessage },
 			],
 			stream: true,
