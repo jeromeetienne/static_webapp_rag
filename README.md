@@ -4,6 +4,18 @@ A purely static web app that answers questions about a fixed document set using 
 
 **Live demo:** https://jeromeetienne.github.io/static_webapp_rag/
 
+## Use cases
+
+The combination of **zero marginal cost + zero infrastructure + privacy by default** unlocks use cases that hosted RAG (per-query API fees, a server to run) can't economically serve:
+
+- **Open-source documentation.** Add "ask the docs" to a library's GitHub Pages site without ever paying an OpenAI bill. Stack Overflow drive-by traffic that would bankrupt a metered service costs $0 here.
+- **Privacy-mandated industries.** Law firms, medical practices, internal HR portals — anywhere data residency, HIPAA, or GDPR rules block sending queries to a cloud LLM. Nothing leaves the browser.
+- **Niche curators.** 20 years of vintage motorcycle notes, a Tolkien lore wiki, a course on medieval poetry — corpora too small and specific for any cloud service to bother with. Free hosting + free queries means even 100 visitors a year is sustainable indefinitely.
+- **Offline-first environments.** Field service on oil rigs, first responders in disaster zones, NGOs in low-bandwidth regions, pilots, schools with bad wifi. Load once, query for years.
+- **Unpredictable-audience embeds.** Conferences, museums, kiosks, in-flight entertainment, indie game wikis. Costs don't scale with visitor count; no API key to rotate five years from now.
+
+**Sweet spot:** structured, factual, bounded corpora — docs, wikis, manuals, FAQs, course material. Less suited to open-ended reasoning or nuanced chat, since the in-browser LLM is bounded by what fits in WebGPU memory.
+
 ## How it works
 
 ```
