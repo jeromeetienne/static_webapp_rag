@@ -140,3 +140,7 @@ That runs `predeploy` (re-embeds docs, builds with `--base=/static_webapp_rag/`)
 - WebGPU is required for in-browser LLM inference. Browsers without it can still see the landing page but the chat will fail to initialize.
 - GitHub Pages can't set COOP/COEP headers, so transformers.js falls back to the non-threaded ONNX runtime in production. Slightly slower; functionally identical.
 - The whole vector index is loaded eagerly. Fine up to a few thousand chunks; past ~50 k chunks you'd want sharding or int8 quantization.
+
+---
+
+Made with ❤️ by [Jerome Etienne](https://www.linkedin.com/in/jeromeetienne/)
