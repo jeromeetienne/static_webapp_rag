@@ -53,7 +53,4 @@ export class BuildIndex {
 	}
 }
 
-BuildIndex.run().catch((err) => {
-	console.error(err);
-	process.exit(1);
-});
+await BuildIndex.run()

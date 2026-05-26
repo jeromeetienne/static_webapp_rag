@@ -3,6 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Command } from 'commander';
 
+/** A Wikipedia article fetched from the API: display title, canonical URL, and plain-text body. */
 export type WikiArticle = {
 	title: string;
 	url: string;
@@ -25,7 +26,12 @@ type ExtractsResponse = {
 const DOCUMENTS_DIR = 'documents_original';
 const USER_AGENT = 'static-webapp-rag/0.0.1 (https://github.com/jeromeetienne/static_webapp_rag)';
 
+/** CLI that searches Wikipedia and writes matching articles as markdown into the output directory. */
 export class FetchWikipedia {
+	/**
+	 * Entry point: parses CLI arguments from `process.argv`, searches Wikipedia, fetches each
+	 * matching article, and writes them as markdown files. Progress is logged to stderr.
+	 */
 	static async run(): Promise<void> {
 		const program = new Command();
 		program
@@ -80,6 +86,13 @@ export class FetchWikipedia {
 		console.error(`done — ${written} written, ${skipped} skipped`);
 	}
 
+	/**
+	 * Queries Wikipedia's OpenSearch API for article titles matching the query.
+	 * @param query - free-text search terms
+	 * @param limit - maximum number of titles to return
+	 * @param lang - Wikipedia language code (e.g. `en`, `fr`)
+	 * @returns matched article titles, in Wikipedia's relevance order
+	 */
 	static async search(query: string, limit: number, lang: string): Promise<string[]> {
 		const url = new URL(`https://${lang}.wikipedia.org/w/api.php`);
 		url.searchParams.set('action', 'opensearch');
@@ -95,6 +108,13 @@ export class FetchWikipedia {
 		return data[1];
 	}
 
+	/**
+	 * Fetches the plain-text extract for a single article via the `extracts` API and resolves
+	 * redirects to the canonical title.
+	 * @param title - article title to fetch
+	 * @param lang - Wikipedia language code
+	 * @returns the article, or `null` if the page is missing or has an empty extract
+	 */
 	static async fetchArticle(title: string, lang: string): Promise<WikiArticle | null> {
 		const url = new URL(`https://${lang}.wikipedia.org/w/api.php`);
 		url.searchParams.set('action', 'query');
@@ -120,6 +140,10 @@ export class FetchWikipedia {
 		return { title: resolvedTitle, url: wikiUrl, body: extract };
 	}
 
+	/**
+	 * Converts a `WikiArticle` to markdown by mapping Wikipedia's `==`-style headings to `#`-style
+	 * and prepending a top-level title and source URL.
+	 */
 	static toMarkdown(article: WikiArticle): string {
 		const converted = article.body
 			.replace(/^======\s*(.*?)\s*======$/gm, '###### $1')
@@ -130,6 +154,10 @@ export class FetchWikipedia {
 		return `# ${article.title}\n\nSource: ${article.url}\n\n${converted.trim()}\n`;
 	}
 
+	/**
+	 * Converts an article title to a filesystem-safe kebab-case slug: lowercased, diacritics
+	 * stripped, and runs of non-alphanumerics collapsed to a single `-`.
+	 */
 	static slugify(title: string): string {
 		return title
 			.toLowerCase()
@@ -139,6 +167,7 @@ export class FetchWikipedia {
 			.replace(/^-+|-+$/g, '');
 	}
 
+	/** Returns whether a file exists at the given path (wraps `fs.access`). */
 	static async exists(filePath: string): Promise<boolean> {
 		try {
 			await fs.access(filePath);
