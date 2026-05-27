@@ -9,6 +9,7 @@ import {
 } from '../../_shared/src/llm.ts';
 import { Device } from '../../_shared/src/device.ts';
 import { CitationLinker } from '../../_shared/src/citation-linker.ts';
+import { VoiceInput } from '../../_shared/src/voice-input.ts';
 import { marked } from 'marked';
 
 const TOP_K = 3;
@@ -25,6 +26,8 @@ class MainChat {
 	private readonly buttonEl: HTMLButtonElement;
 	private readonly statusEl: HTMLElement;
 	private modelReady = false;
+	private voice: VoiceInput | null = null;
+	private voiceBaseText = '';
 
 	constructor(app: HTMLElement, index: Index) {
 		this.index = index;
@@ -47,22 +50,29 @@ class MainChat {
 		app.appendChild(footer);
 
 		const form = document.createElement('form');
-		form.className = 'd-flex gap-2';
 		footer.appendChild(form);
+
+		const group = document.createElement('div');
+		group.className = 'input-group';
+		form.appendChild(group);
 
 		this.inputEl = document.createElement('input');
 		this.inputEl.type = 'text';
 		this.inputEl.className = 'form-control';
 		this.inputEl.placeholder = 'Ask a question about the docs…';
 		this.inputEl.autocomplete = 'off';
-		form.appendChild(this.inputEl);
+		group.appendChild(this.inputEl);
+
+		if (VoiceInput.isSupported() === true) {
+			this.wireMicButton(group);
+		}
 
 		this.buttonEl = document.createElement('button');
 		this.buttonEl.type = 'submit';
 		this.buttonEl.className = 'btn btn-primary';
 		this.buttonEl.textContent = 'Send';
 		this.buttonEl.disabled = true;
-		form.appendChild(this.buttonEl);
+		group.appendChild(this.buttonEl);
 
 		this.statusEl = document.createElement('p');
 		this.statusEl.className = 'text-muted small mt-2 mb-0';
@@ -211,6 +221,68 @@ class MainChat {
 
 	private scrollToBottom(): void {
 		this.messagesEl.scrollTop = this.messagesEl.scrollHeight;
+	}
+
+	private wireMicButton(container: HTMLElement): void {
+		const micBtn = document.createElement('button');
+		micBtn.type = 'button';
+		micBtn.className = 'btn btn-outline-secondary';
+		micBtn.setAttribute('aria-label', 'Voice input');
+		micBtn.appendChild(MainChat.makeMicIcon());
+		container.appendChild(micBtn);
+
+		const setIdle = (): void => {
+			micBtn.classList.remove('btn-danger');
+			micBtn.classList.add('btn-outline-secondary');
+		};
+		const setActive = (): void => {
+			micBtn.classList.remove('btn-outline-secondary');
+			micBtn.classList.add('btn-danger');
+		};
+
+		this.voice = new VoiceInput({
+			onInterim: (text) => {
+				this.inputEl.value = `${this.voiceBaseText}${text}`;
+			},
+			onFinal: (text) => {
+				this.voiceBaseText = `${this.voiceBaseText}${text}`;
+				this.inputEl.value = this.voiceBaseText;
+			},
+			onError: (message) => {
+				this.statusEl.textContent = `Mic error: ${message}`;
+			},
+			onEnd: () => {
+				setIdle();
+				this.inputEl.focus();
+			},
+		});
+
+		micBtn.addEventListener('click', () => {
+			if (this.voice === null) return;
+			if (this.voice.isRunning() === true) {
+				this.voice.stop();
+				return;
+			}
+			this.voiceBaseText = this.inputEl.value;
+			setActive();
+			this.voice.start();
+		});
+	}
+
+	private static makeMicIcon(): SVGSVGElement {
+		const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+		svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+		svg.setAttribute('width', '16');
+		svg.setAttribute('height', '16');
+		svg.setAttribute('fill', 'currentColor');
+		svg.setAttribute('viewBox', '0 0 16 16');
+		const p1 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+		p1.setAttribute('d', 'M3.5 6.5A.5.5 0 0 1 4 7v1a4 4 0 0 0 8 0V7a.5.5 0 0 1 1 0v1a5 5 0 0 1-4.5 4.975V15h3a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1h3v-2.025A5 5 0 0 1 3 8V7a.5.5 0 0 1 .5-.5');
+		const p2 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+		p2.setAttribute('d', 'M10 8a2 2 0 1 1-4 0V3a2 2 0 1 1 4 0zM8 0a3 3 0 0 0-3 3v5a3 3 0 0 0 6 0V3a3 3 0 0 0-3-3');
+		svg.appendChild(p1);
+		svg.appendChild(p2);
+		return svg;
 	}
 
 	private static makeSpinner(): HTMLElement {
