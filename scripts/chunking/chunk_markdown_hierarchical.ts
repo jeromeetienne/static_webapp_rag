@@ -40,7 +40,7 @@ export class ChunkMarkdownHierarchical {
 		return { parents, children };
 	}
 
-	static buildParents(tree: Root, source: string, sourceName: string): Parent[] {
+	private static buildParents(tree: Root, source: string, sourceName: string): Parent[] {
 		const parents: Parent[] = [];
 		const headingPath: string[] = [];
 		let buffer: RootContent[] = [];
@@ -115,7 +115,7 @@ export class ChunkMarkdownHierarchical {
 		return parents;
 	}
 
-	static splitChildren(parent: Parent): Child[] {
+	private static splitChildren(parent: Parent): Child[] {
 		const text = parent.text;
 		if (text.length <= CHILD_MAX) {
 			return [{
@@ -153,7 +153,7 @@ export class ChunkMarkdownHierarchical {
 		return children;
 	}
 
-	static findCut(text: string, start: number, end: number, ranges: Array<[number, number]>): number {
+	private static findCut(text: string, start: number, end: number, ranges: Array<[number, number]>): number {
 		const min = start + Math.floor(CHILD_MAX / 2);
 		const separators = ['\n\n', '. ', ' '];
 		for (const sep of separators) {
@@ -169,14 +169,14 @@ export class ChunkMarkdownHierarchical {
 		return end;
 	}
 
-	static inProtected(pos: number, ranges: Array<[number, number]>): boolean {
+	private static inProtected(pos: number, ranges: Array<[number, number]>): boolean {
 		for (const [s, e] of ranges) {
 			if (pos >= s && pos < e) return true;
 		}
 		return false;
 	}
 
-	static protectedRanges(text: string): Array<[number, number]> {
+	private static protectedRanges(text: string): Array<[number, number]> {
 		const ranges: Array<[number, number]> = [];
 		const lines = text.split('\n');
 		let offset = 0;

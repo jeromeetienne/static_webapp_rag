@@ -27,7 +27,7 @@ export class ChunkTextBoundaryAware {
 		return chunks;
 	}
 
-	static findBoundary(text: string, start: number, end: number): number {
+	private static findBoundary(text: string, start: number, end: number): number {
 		const min = start + Math.floor(CHUNK_SIZE / 2);
 		const para = text.lastIndexOf('\n\n', end);
 		if (para > min) return para;
