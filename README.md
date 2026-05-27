@@ -82,14 +82,14 @@ Refresh the page; Vite serves `web/public/documents_encoded/` directly, no rebui
 
 ### Tweaking chunking
 
-Constants live at the top of [scripts/chunk-docs.ts](scripts/chunk-docs.ts):
+Constants live at the top of [scripts/chunk-docs-naive.ts](scripts/chunk-docs-naive.ts):
 
 ```ts
 const CHUNK_SIZE = 500;
 const CHUNK_OVERLAP = 50;
 ```
 
-Splitter is sentence/paragraph-aware — see `ChunkDocs.findBoundary`.
+Splitter is sentence/paragraph-aware — see `ChunkDocsNaive.findBoundary`.
 
 ### Changing the LLM
 
@@ -108,7 +108,7 @@ export const MOBILE_MODEL  = 'Qwen2.5-0.5B-Instruct-q4f16_1-MLC';
 ```
 documents_original/      # source docs (input to build-index)
 scripts/
-  chunk-docs.ts          # CLI: print chunks (debugging)
+  chunk-docs-naive.ts    # CLI: print chunks (debugging)
   build-index.ts         # CLI: chunk + embed → web/public/documents_encoded/
 web/                     # everything browser
   index.html             # landing page (Bootstrap)

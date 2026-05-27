@@ -1,36 +1,42 @@
 import Fs from 'node:fs';
 import Path from 'node:path';
-import { pipeline } from '@huggingface/transformers';
-import { ChunkDocs } from './chunk-docs.ts';
+import * as Transformer from '@huggingface/transformers';
+import { ChunkDocsNaive } from './chunk-docs-naive.ts';
 
-const MODEL_ID = 'Xenova/all-MiniLM-L6-v2';
+const EMBEDDING_MODEL = 'Xenova/all-MiniLM-L6-v2';
 const EMBEDDING_NDIM = 384;
 const ENCODED_DIR = Path.resolve(process.cwd(), 'web', 'public', 'documents_encoded');
 
 export class BuildIndex {
 	static async run(): Promise<void> {
 		console.error('chunking docs...');
-		const chunks = await ChunkDocs.chunkAll();
+		const chunks = await ChunkDocsNaive.chunkAll();
 		console.error(`got ${chunks.length} chunks`);
 
-		console.error(`loading embedding model: ${MODEL_ID}`);
-		const extractor = await pipeline('feature-extraction', MODEL_ID);
+		console.error(`loading embedding model: ${EMBEDDING_MODEL}`);
+		const extractor = await Transformer.pipeline('feature-extraction', EMBEDDING_MODEL);
 
 		console.error('embedding chunks...');
 		const embeddings = new Float32Array(chunks.length * EMBEDDING_NDIM);
 		for (let i = 0; i < chunks.length; i++) {
-			const out = await extractor(chunks[i].text, {
+			const tensorOut = await extractor(chunks[i].text, {
 				pooling: 'mean',
 				normalize: true,
 			});
-			const vec = out.data as Float32Array;
-			if (vec.length !== EMBEDDING_NDIM) {
-				throw new Error(`unexpected embedding dim ${vec.length}, want ${EMBEDDING_NDIM}`);
+			const vector = tensorOut.data as Float32Array;
+			if (vector.length !== EMBEDDING_NDIM) {
+				throw new Error(`unexpected embedding dim ${vector.length}, want ${EMBEDDING_NDIM}`);
 			}
-			embeddings.set(vec, i * EMBEDDING_NDIM);
+			embeddings.set(vector, i * EMBEDDING_NDIM);
 			process.stderr.write('.');
 		}
 		process.stderr.write('\n');
+
+		///////////////////////////////////////////////////////////////////////////////
+		///////////////////////////////////////////////////////////////////////////////
+		//	
+		///////////////////////////////////////////////////////////////////////////////
+		///////////////////////////////////////////////////////////////////////////////
 
 		await Fs.promises.mkdir(ENCODED_DIR, { recursive: true });
 		await Fs.promises.writeFile(
@@ -44,7 +50,7 @@ export class BuildIndex {
 		await Fs.promises.writeFile(
 			Path.join(ENCODED_DIR, 'meta.json'),
 			JSON.stringify(
-				{ model: MODEL_ID, dim: EMBEDDING_NDIM, count: chunks.length },
+				{ model: EMBEDDING_MODEL, dim: EMBEDDING_NDIM, count: chunks.length },
 				null,
 				2,
 			),
@@ -52,5 +58,11 @@ export class BuildIndex {
 		console.error(`wrote ${chunks.length} × ${EMBEDDING_NDIM} index to ${ENCODED_DIR}`);
 	}
 }
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+//	
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
 await BuildIndex.run()

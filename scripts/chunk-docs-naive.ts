@@ -1,6 +1,6 @@
-import { promises as fs } from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import Fs from 'node:fs';
+import Path from 'node:path';
+import NodeUrl from 'node:url';
 
 export type Chunk = {
 	id: string;
@@ -13,23 +13,17 @@ const CHUNK_SIZE = 500;
 const CHUNK_OVERLAP = 50;
 const DOCUMENTS_DIR = 'documents_original';
 
-export class ChunkDocs {
-	static async run(): Promise<void> {
-		const chunks = await ChunkDocs.chunkAll();
-		console.log(JSON.stringify(chunks, null, 2));
-		console.error(`chunked ${chunks.length} pieces from ${DOCUMENTS_DIR}/`);
-	}
-
+export class ChunkDocsNaive {
 	static async chunkAll(): Promise<Chunk[]> {
-		const docsDir = path.resolve(process.cwd(), DOCUMENTS_DIR);
-		const entries = await fs.readdir(docsDir);
-		const out: Chunk[] = [];
-		for (const file of entries.sort()) {
-			if (/\.(md|txt)$/i.test(file) === false) continue;
-			const text = await fs.readFile(path.join(docsDir, file), 'utf-8');
-			out.push(...ChunkDocs.chunkText(text, file));
+		const docsDir = Path.resolve(process.cwd(), DOCUMENTS_DIR);
+		const dirEntries = await Fs.promises.readdir(docsDir);
+		const chunks: Chunk[] = [];
+		for (const filename of dirEntries.sort()) {
+			if (/\.(md|txt)$/i.test(filename) === false) continue;
+			const text = await Fs.promises.readFile(Path.join(docsDir, filename), 'utf-8');
+			chunks.push(...ChunkDocsNaive.chunkText(text, filename));
 		}
-		return out;
+		return chunks;
 	}
 
 	static chunkText(text: string, source: string): Chunk[] {
@@ -38,7 +32,7 @@ export class ChunkDocs {
 		while (start < text.length) {
 			let end = Math.min(start + CHUNK_SIZE, text.length);
 			if (end < text.length) {
-				end = ChunkDocs.findBoundary(text, start, end);
+				end = ChunkDocsNaive.findBoundary(text, start, end);
 			}
 			const slice = text.slice(start, end).trim();
 			if (slice.length > 0) {
@@ -74,10 +68,14 @@ export class ChunkDocs {
 	}
 }
 
-const invokedDirectly = process.argv[1] === fileURLToPath(import.meta.url);
-if (invokedDirectly === true) {
-	ChunkDocs.run().catch((err) => {
-		console.error(err);
-		process.exit(1);
-	});
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+//	
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+if (process.argv[1] === NodeUrl.fileURLToPath(import.meta.url)) {
+	const chunks = await ChunkDocsNaive.chunkAll();
+	console.log(JSON.stringify(chunks, null, 2));
+	console.error(`chunked ${chunks.length} pieces from ${DOCUMENTS_DIR}/`);
 }

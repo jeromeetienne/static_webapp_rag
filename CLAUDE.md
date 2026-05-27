@@ -18,7 +18,7 @@ When generating TypeScript code, follow these conventions:
 ### Naming
 - `camelCase` for variables and functions
 - `PascalCase` for classes, interfaces, and type aliases
-- `kebab-case` for file names
+- `snake_case` for file names
 - `UPPER_SNAKE_CASE` for true constants
 
 ### Formatting
@@ -28,6 +28,6 @@ When generating TypeScript code, follow these conventions:
 - Semicolons required
 
 ### Code Organization
-- All exported functions in a module must live in a static class named after the file (kebab-case → PascalCase). Example: `ai-client.ts` → `class AiClient { static … }`. Classes with internal state use instance methods instead.
+- All exported functions in a module must live in a static class named after the file (snake_case → PascalCase). Example: `ai_client.ts` → `class AiClient { static … }`. Classes with internal state use instance methods instead.
 - Early returns over deeply nested conditions
 - No unnecessary comments — let code speak for itself
