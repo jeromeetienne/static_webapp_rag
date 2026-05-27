@@ -29,6 +29,46 @@ const PARENT_MAX = 2000;
 const CHILD_MAX = 400;
 const CHILD_OVER = 80;
 
+/**
+ * AST-based hierarchical markdown chunker. Emits parents (section-sized,
+ * ~PARENT_MAX chars, cut at heading boundaries) and children (~CHILD_MAX
+ * chars with ~CHILD_OVER overlap, cut within a parent).
+ *
+ * Pipeline: parse → buildParents → splitChildren.
+ *
+ * 1. parse — unified + remark-parse + remark-gfm produce an mdast tree
+ *    whose top-level nodes carry position offsets back into the source.
+ *
+ * 2. buildParents — stream the top-level nodes through a buffer, tracking
+ *    a heading-path stack (the H1 > H2 > H3 breadcrumb).
+ *    - heading node: flush the buffer as a parent (if it has any non-heading
+ *      content), update the stack (truncate to depth-1, set new title),
+ *      push the heading into the new buffer so the parent text begins
+ *      with its heading line.
+ *    - non-heading node: flush first if buffer + node would exceed
+ *      PARENT_MAX *and* the buffer already has non-heading content; else
+ *      append.
+ *    Parent text is built by slicing the *original source* at each node's
+ *    position offsets — no re-serialization, so fences / tables / lists
+ *    stay byte-identical.
+ *    Atomic escape hatch: a single oversized node (long code block, big
+ *    table) is buffered whole rather than split mid-node — the parent
+ *    simply exceeds PARENT_MAX in that case.
+ *
+ * 3. splitChildren — sliding character window over parent.text.
+ *    findCut prefers boundaries in order: paragraph (\n\n) → sentence
+ *    (. ) → word ( ) → forced cut. A half-window floor (cut must be past
+ *    start + CHILD_MAX/2) prevents tiny chunks and stalled overlap
+ *    arithmetic. protectedRanges pre-scans the parent for fenced code
+ *    blocks and contiguous |-tables; findCut walks back to earlier
+ *    separators when a candidate falls inside a protected range.
+ *    Advance is `max(1, cut - CHILD_OVER)`, giving ~CHILD_OVER chars of
+ *    overlap between adjacent children.
+ *
+ * Net effect: cuts respect markdown structure (never mid-code-block,
+ * never mid-table), every child carries its parent's heading path, and
+ * atomic blocks survive whole at the cost of an oversized parent.
+ */
 export class ChunkMarkdownHierarchical {
 	static chunkText(source: string, sourceName: string): HierarchicalResult {
 		const tree = unified().use(remarkParse).use(remarkGfm).parse(source) as Root;

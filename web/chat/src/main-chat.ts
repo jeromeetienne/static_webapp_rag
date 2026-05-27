@@ -1,13 +1,13 @@
-import { IndexLoader, type Index } from './index-loader.ts';
-import { QueryEmbedder } from './query-embedder.ts';
-import { Retriever } from './retriever.ts';
+import { IndexLoader, type Index } from '../../_shared/src/index-loader.ts';
+import { QueryEmbedder } from '../../_shared/src/query-embedder.ts';
+import { Retriever } from '../../_shared/src/retriever.ts';
 import {
 	Llm,
 	DEFAULT_MODEL,
 	MOBILE_MODEL,
 	type ChatHistoryMessage,
-} from './llm.ts';
-import { Device } from './device.ts';
+} from '../../_shared/src/llm.ts';
+import { Device } from '../../_shared/src/device.ts';
 
 const TOP_K = 3;
 

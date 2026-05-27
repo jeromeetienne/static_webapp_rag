@@ -47,8 +47,8 @@ Same embedding model on both sides (`Xenova/all-MiniLM-L6-v2`, 384-dim) — vect
 | Bundler / dev server | [Vite](https://vitejs.dev) + TypeScript |
 | Embeddings (Node + browser) | [`@huggingface/transformers`](https://github.com/huggingface/transformers.js) running `Xenova/all-MiniLM-L6-v2` |
 | LLM (browser only) | [`@mlc-ai/web-llm`](https://github.com/mlc-ai/web-llm) with `Llama-3.2-3B-Instruct-q4f16_1-MLC` (Qwen2.5-0.5B on mobile) |
-| Chat UI (`/chat_pro/`) | [`deep-chat`](https://github.com/OvidijusParsiunas/deep-chat) web component |
-| Chat UI (`/chat_basic/`) | hand-rolled DOM — no widget lib |
+| Chat UI (`/chat/`) | [`deep-chat`](https://github.com/OvidijusParsiunas/deep-chat) web component |
+| Chat UI (`/query/`) | hand-rolled DOM — no widget lib |
 | Landing page | Bootstrap 5.3 via CDN |
 | Deploy | [`gh-pages`](https://github.com/tschaub/gh-pages) → GitHub Pages |
 
@@ -66,7 +66,7 @@ npm run build-index     # chunk + embed documents_original/ → web/public/docum
 npm run dev             # http://localhost:5173
 ```
 
-Open the landing page, click **Try the chat** to hit `/chat_pro/` (the polished deep-chat variant). The bare-bones `/chat_basic/` is linked below the CTA. First query downloads the embedding model (~25 MB) and then the LLM (~1.8 GB on desktop, ~350 MB on mobile) — both are cached in the browser afterwards.
+Open the landing page, click **Try the chat** to hit `/chat/` (the polished deep-chat variant). The bare-bones `/query/` is linked below the CTA. First query downloads the embedding model (~25 MB) and then the LLM (~1.8 GB on desktop, ~350 MB on mobile) — both are cached in the browser afterwards.
 
 ## Customizing
 
@@ -112,11 +112,11 @@ scripts/
   build-index.ts         # CLI: chunk + embed → web/public/documents_encoded/
 web/                     # everything browser
   index.html             # landing page (Bootstrap)
-  chat_basic/index.html  # bare-bones chat UI (hand-rolled)
-  chat_pro/index.html    # polished chat UI (deep-chat web component)
+  query/index.html       # bare-bones chat UI (hand-rolled)
+  chat/index.html        # polished chat UI (deep-chat web component)
   src/
-    main.ts              # chat_basic entry, wires retrieve → generate
-    main-pro.ts          # chat_pro entry, same pipeline behind <deep-chat>
+    main.ts              # query entry, wires retrieve → generate
+    main-pro.ts          # chat entry, same pipeline behind <deep-chat>
     index-loader.ts      # fetch chunks.json / embeddings.bin
     query-embedder.ts    # lazy-loads MiniLM in browser
     retriever.ts         # cosine top-K

@@ -1,4 +1,4 @@
-import { IndexLoader, type Chunk, type Index } from './index-loader.ts';
+import { IndexLoader, type Chunk, type Index } from '../../_shared/src/index-loader.ts';
 
 type DocStats = {
 	source: string;

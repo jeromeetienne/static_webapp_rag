@@ -9,9 +9,9 @@ export default defineConfig({
 		rollupOptions: {
 			input: {
 				index: resolve(import.meta.dirname, 'web/index.html'),
-				chatBasic: resolve(import.meta.dirname, 'web/chat_basic/index.html'),
-				chatPro: resolve(import.meta.dirname, 'web/chat_pro/index.html'),
-				documentsStats: resolve(import.meta.dirname, 'web/documents_stats/index.html'),
+				query: resolve(import.meta.dirname, 'web/query/index.html'),
+				chat: resolve(import.meta.dirname, 'web/chat/index.html'),
+				stats: resolve(import.meta.dirname, 'web/stats/index.html'),
 			},
 		},
 	},
