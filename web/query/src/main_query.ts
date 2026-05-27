@@ -55,6 +55,7 @@ class Main {
 		button.type = 'submit';
 		button.textContent = 'Ask';
 		button.style.padding = '8px 16px';
+		button.disabled = true;
 		form.appendChild(input);
 		form.appendChild(button);
 		app.appendChild(form);
@@ -62,7 +63,7 @@ class Main {
 		const status = document.createElement('p');
 		status.style.color = '#888';
 		status.style.fontSize = '0.9em';
-		status.textContent = `Ready. First question downloads ${modelId} (cached after).`;
+		status.textContent = `Loading ${modelId}...`;
 		app.appendChild(status);
 
 		const answerSection = document.createElement('section');
@@ -109,6 +110,15 @@ class Main {
 				status.textContent = `Error: ${err instanceof Error ? err.message : String(err)}`;
 				button.disabled = false;
 			});
+		});
+
+		llm.preload((msg) => {
+			status.textContent = `Loading model: ${msg}`;
+		}).then(() => {
+			status.textContent = `Ready.`;
+			button.disabled = false;
+		}).catch((err: unknown) => {
+			status.textContent = `LLM load failed: ${err instanceof Error ? err.message : String(err)}`;
 		});
 	}
 
