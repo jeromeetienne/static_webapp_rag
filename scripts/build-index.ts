@@ -1,7 +1,7 @@
 import Fs from 'node:fs';
 import Path from 'node:path';
 import * as Transformer from '@huggingface/transformers';
-import { ChunkDocsNaive } from './chunk-docs-naive.ts';
+import { ChunkMain } from './chunking/chunk_main.ts';
 
 const EMBEDDING_MODEL = 'Xenova/all-MiniLM-L6-v2';
 const EMBEDDING_NDIM = 384;
@@ -10,7 +10,7 @@ const ENCODED_DIR = Path.resolve(process.cwd(), 'web', 'public', 'documents_enco
 export class BuildIndex {
 	static async run(): Promise<void> {
 		console.error('chunking docs...');
-		const chunks = await ChunkDocsNaive.chunkAll();
+		const chunks = await ChunkMain.chunkAll();
 		console.error(`got ${chunks.length} chunks`);
 
 		console.error(`loading embedding model: ${EMBEDDING_MODEL}`);

@@ -1,6 +1,3 @@
-import Fs from 'node:fs';
-import Path from 'node:path';
-import NodeUrl from 'node:url';
 import { unified } from 'unified';
 import remarkParse from 'remark-parse';
 import remarkGfm from 'remark-gfm';
@@ -31,24 +28,8 @@ export type HierarchicalResult = {
 const PARENT_MAX = 2000;
 const CHILD_MAX = 400;
 const CHILD_OVER = 80;
-const DOCUMENTS_DIR = 'documents_original';
 
 export class ChunkMarkdownHierarchical {
-	static async chunkAll(): Promise<HierarchicalResult> {
-		const docsDir = Path.resolve(process.cwd(), DOCUMENTS_DIR);
-		const dirEntries = await Fs.promises.readdir(docsDir);
-		const parents: Parent[] = [];
-		const children: Child[] = [];
-		for (const filename of dirEntries.sort()) {
-			if (/\.md$/i.test(filename) === false) continue;
-			const text = await Fs.promises.readFile(Path.join(docsDir, filename), 'utf-8');
-			const part = ChunkMarkdownHierarchical.chunkText(text, filename);
-			parents.push(...part.parents);
-			children.push(...part.children);
-		}
-		return { parents, children };
-	}
-
 	static chunkText(source: string, sourceName: string): HierarchicalResult {
 		const tree = unified().use(remarkParse).use(remarkGfm).parse(source) as Root;
 		const parents = ChunkMarkdownHierarchical.buildParents(tree, source, sourceName);
@@ -232,18 +213,4 @@ export class ChunkMarkdownHierarchical {
 		if (tableStart >= 0) ranges.push([tableStart, offset]);
 		return ranges;
 	}
-}
-
-///////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-//
-///////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-
-if (process.argv[1] === NodeUrl.fileURLToPath(import.meta.url)) {
-	const result = await ChunkMarkdownHierarchical.chunkAll();
-	console.log(JSON.stringify(result, null, 2));
-	console.error(
-		`chunked ${result.parents.length} parents / ${result.children.length} children from ${DOCUMENTS_DIR}/`,
-	);
 }

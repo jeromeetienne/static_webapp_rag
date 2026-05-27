@@ -7,7 +7,7 @@
         "dev": "vite",
         "build": "tsc --noEmit && vite build",
         "preview": "vite preview",
-        "chunk:naive": "tsx scripts/chunk-docs-naive.ts",
+        "chunk": "tsx scripts/chunking/chunk_main.ts",
         "build-index": "tsx scripts/build-index.ts",
         "fetch-wiki": "tsx scripts/fetch-wikipedia.ts",
         "predeploy": "npm run build-index && vite build --base=/static_webapp_rag/",
