@@ -7,7 +7,7 @@ import { CitationLinker } from '../../_shared/src/citation-linker.ts';
 
 const TOP_K = 3;
 
-class Main {
+class MainQuery {
 	static async run(): Promise<void> {
 		const app = document.querySelector<HTMLDivElement>('#app');
 		if (app === null) {
@@ -16,14 +16,14 @@ class Main {
 		app.textContent = 'Loading index...';
 		try {
 			const index = await IndexLoader.load();
-			Main.renderUi(app, index);
+			MainQuery.renderUi(app, index);
 		} catch (err) {
 			app.textContent = `Error: ${err instanceof Error ? err.message : String(err)}`;
 			throw err;
 		}
 	}
 
-	static renderUi(app: HTMLDivElement, index: Index): void {
+	private static renderUi(app: HTMLDivElement, index: Index): void {
 		const embedder = new QueryEmbedder();
 		const modelId = Device.isMobile() === true ? MOBILE_MODEL : DEFAULT_MODEL;
 		const llm = new Llm(modelId);
@@ -98,7 +98,7 @@ class Main {
 			e.preventDefault();
 			const query = input.value.trim();
 			if (query === '') return;
-			Main.runQuery(
+			MainQuery.runQuery(
 				query,
 				index,
 				embedder,
@@ -124,7 +124,7 @@ class Main {
 		});
 	}
 
-	static async runQuery(
+	private static async runQuery(
 		query: string,
 		index: Index,
 		embedder: QueryEmbedder,
@@ -136,7 +136,7 @@ class Main {
 		knownSources: Set<string>,
 	): Promise<void> {
 		button.disabled = true;
-		answerEl.replaceChildren(Main.makeSpinner());
+		answerEl.replaceChildren(MainQuery.makeSpinner());
 		sourcesEl.replaceChildren();
 
 		status.textContent = 'Embedding query...';
@@ -145,7 +145,7 @@ class Main {
 		const embedMs = (performance.now() - tEmbed).toFixed(0);
 
 		const hits = Retriever.topK(vec, index, TOP_K);
-		Main.renderHits(sourcesEl, index, hits);
+		MainQuery.renderHits(sourcesEl, index, hits);
 		status.textContent = `Retrieved ${hits.length} chunks (${embedMs}ms). Generating answer...`;
 
 		const contextChunks = hits.map((h) => ({
@@ -171,7 +171,7 @@ class Main {
 		button.disabled = false;
 	}
 
-	static makeSpinner(): HTMLElement {
+	private static makeSpinner(): HTMLElement {
 		const spinner = document.createElement('div');
 		spinner.className = 'spinner-border spinner-border-sm text-secondary';
 		spinner.setAttribute('role', 'status');
@@ -182,7 +182,7 @@ class Main {
 		return spinner;
 	}
 
-	static renderHits(container: HTMLElement, index: Index, hits: Hit[]): void {
+	private static renderHits(container: HTMLElement, index: Index, hits: Hit[]): void {
 		const ol = document.createElement('ol');
 		for (const hit of hits) {
 			const chunk = index.chunks[hit.index];
@@ -210,4 +210,4 @@ class Main {
 	}
 }
 
-Main.run();
+MainQuery.run();

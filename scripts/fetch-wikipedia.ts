@@ -93,7 +93,7 @@ export class FetchWikipedia {
 	 * @param lang - Wikipedia language code (e.g. `en`, `fr`)
 	 * @returns matched article titles, in Wikipedia's relevance order
 	 */
-	static async search(query: string, limit: number, lang: string): Promise<string[]> {
+	private static async search(query: string, limit: number, lang: string): Promise<string[]> {
 		const url = new URL(`https://${lang}.wikipedia.org/w/api.php`);
 		url.searchParams.set('action', 'opensearch');
 		url.searchParams.set('search', query);
@@ -115,7 +115,7 @@ export class FetchWikipedia {
 	 * @param lang - Wikipedia language code
 	 * @returns the article, or `null` if the page is missing or has an empty extract
 	 */
-	static async fetchArticle(title: string, lang: string): Promise<WikiArticle | null> {
+	private static async fetchArticle(title: string, lang: string): Promise<WikiArticle | null> {
 		const url = new URL(`https://${lang}.wikipedia.org/w/api.php`);
 		url.searchParams.set('action', 'query');
 		url.searchParams.set('prop', 'extracts');
@@ -144,7 +144,7 @@ export class FetchWikipedia {
 	 * Converts a `WikiArticle` to markdown by mapping Wikipedia's `==`-style headings to `#`-style
 	 * and prepending a top-level title and source URL.
 	 */
-	static toMarkdown(article: WikiArticle): string {
+	private static toMarkdown(article: WikiArticle): string {
 		const converted = article.body
 			.replace(/^======\s*(.*?)\s*======$/gm, '###### $1')
 			.replace(/^=====\s*(.*?)\s*=====$/gm, '##### $1')
@@ -158,7 +158,7 @@ export class FetchWikipedia {
 	 * Converts an article title to a filesystem-safe kebab-case slug: lowercased, diacritics
 	 * stripped, and runs of non-alphanumerics collapsed to a single `-`.
 	 */
-	static slugify(title: string): string {
+	private static slugify(title: string): string {
 		return title
 			.toLowerCase()
 			.normalize('NFKD')
@@ -168,7 +168,7 @@ export class FetchWikipedia {
 	}
 
 	/** Returns whether a file exists at the given path (wraps `fs.access`). */
-	static async exists(filePath: string): Promise<boolean> {
+	private static async exists(filePath: string): Promise<boolean> {
 		try {
 			await fs.access(filePath);
 			return true;

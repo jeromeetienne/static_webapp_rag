@@ -10,7 +10,7 @@ export const MOBILE_MODEL = 'Qwen2.5-0.5B-Instruct-q4f16_1-MLC';
 
 const SYSTEM_PROMPT = `You are a helpful assistant that answers questions strictly from the provided context.
 If the context does not contain the answer, say "I don't know based on the provided documents."
-Cite the source filename in parentheses after each fact.`;
+After each fact, append the source citation in exactly this format: (source: filename.md). Do not add any other wrapping words like "from" and do not include any chunk numbers.`;
 
 export type ProgressHandler = (msg: string) => void;
 export type TokenHandler = (token: string) => void;
@@ -48,7 +48,7 @@ export class Llm {
 		const engine = await this.getEngine(onProgress);
 
 		const context = contextChunks
-			.map((c, i) => `[${i + 1}] (source: ${c.source})\n${c.text}`)
+			.map((c) => `(source: ${c.source})\n${c.text}`)
 			.join('\n\n');
 
 		const userMessage = `Context:\n${context}\n\nQuestion: ${question}`;

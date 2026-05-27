@@ -13,7 +13,7 @@ import { marked } from 'marked';
 
 const TOP_K = 3;
 
-class MainPro {
+class MainChat {
 	private readonly index: Index;
 	private readonly embedder: QueryEmbedder;
 	private readonly llm: Llm;
@@ -36,20 +36,15 @@ class MainPro {
 
 		app.replaceChildren();
 
-		const card = document.createElement('div');
-		card.className = 'card shadow-sm flex-grow-1';
-		app.appendChild(card);
-
 		this.messagesEl = document.createElement('div');
-		this.messagesEl.className =
-			'card-body overflow-auto d-flex flex-column gap-2 bg-white';
+		this.messagesEl.className = 'overflow-auto d-flex flex-column gap-2';
 		this.messagesEl.style.minHeight = '0';
 		this.messagesEl.style.flex = '1 1 0';
-		card.appendChild(this.messagesEl);
+		app.appendChild(this.messagesEl);
 
 		const footer = document.createElement('div');
-		footer.className = 'card-footer bg-light';
-		card.appendChild(footer);
+		footer.className = 'pt-3';
+		app.appendChild(footer);
 
 		const form = document.createElement('form');
 		form.className = 'd-flex gap-2';
@@ -112,7 +107,7 @@ class MainPro {
 		app.textContent = 'Loading index…';
 		try {
 			const index = await IndexLoader.load();
-			new MainPro(app, index);
+			new MainChat(app, index);
 		} catch (err) {
 			app.textContent = `Error: ${err instanceof Error ? err.message : String(err)}`;
 			throw err;
@@ -127,7 +122,7 @@ class MainPro {
 		this.history.push({ role: 'user', content: query });
 
 		const { bubble, textEl } = this.appendAssistantBubble();
-		textEl.replaceChildren(MainPro.makeSpinner());
+		textEl.replaceChildren(MainChat.makeSpinner());
 
 		this.statusEl.textContent = 'Embedding query…';
 		const tEmbed = performance.now();
@@ -181,9 +176,10 @@ class MainPro {
 		row.className = 'd-flex justify-content-end';
 
 		const bubble = document.createElement('div');
-		bubble.className = 'bg-primary text-white rounded px-3 py-2';
+		bubble.className = 'bg-primary text-white rounded-4 px-3 py-2';
 		bubble.style.maxWidth = '80%';
 		bubble.style.whiteSpace = 'pre-wrap';
+		bubble.style.setProperty('border-bottom-right-radius', '0', 'important');
 		bubble.textContent = text;
 
 		row.appendChild(bubble);
@@ -196,11 +192,12 @@ class MainPro {
 		textEl: HTMLElement;
 	} {
 		const row = document.createElement('div');
-		row.className = 'd-flex justify-content-start';
+		row.className = 'd-flex justify-content-start mb-3';
 
 		const bubble = document.createElement('div');
-		bubble.className = 'bg-light border rounded px-3 py-2 opacity-75';
+		bubble.className = 'bg-light border rounded-4 px-3 py-2 opacity-75';
 		bubble.style.maxWidth = '80%';
+		bubble.style.setProperty('border-bottom-left-radius', '0', 'important');
 
 		const textEl = document.createElement('div');
 		bubble.appendChild(textEl);
@@ -216,7 +213,7 @@ class MainPro {
 		this.messagesEl.scrollTop = this.messagesEl.scrollHeight;
 	}
 
-	static makeSpinner(): HTMLElement {
+	private static makeSpinner(): HTMLElement {
 		const spinner = document.createElement('div');
 		spinner.className = 'spinner-border spinner-border-sm text-secondary';
 		spinner.setAttribute('role', 'status');
@@ -228,4 +225,4 @@ class MainPro {
 	}
 }
 
-MainPro.run();
+MainChat.run();
