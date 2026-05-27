@@ -11,7 +11,7 @@ export type Chunk = {
 	offset: number;
 };
 
-const DOCUMENTS_DIR = 'documents_original';
+const DOCUMENTS_DIR = 'web/public/documents_original';
 
 export class ChunkMain {
 	static async chunkAll(): Promise<Chunk[]> {

@@ -3,6 +3,7 @@ import { QueryEmbedder } from '../../_shared/src/query-embedder.ts';
 import { Retriever, type Hit } from '../../_shared/src/retriever.ts';
 import { Llm, DEFAULT_MODEL, MOBILE_MODEL } from '../../_shared/src/llm.ts';
 import { Device } from '../../_shared/src/device.ts';
+import { CitationLinker } from '../../_shared/src/citation-linker.ts';
 
 const TOP_K = 3;
 
@@ -106,6 +107,7 @@ class Main {
 				status,
 				answerEl,
 				sourcesEl,
+				sources,
 			).catch((err) => {
 				status.textContent = `Error: ${err instanceof Error ? err.message : String(err)}`;
 				button.disabled = false;
@@ -131,9 +133,10 @@ class Main {
 		status: HTMLElement,
 		answerEl: HTMLElement,
 		sourcesEl: HTMLElement,
+		knownSources: Set<string>,
 	): Promise<void> {
 		button.disabled = true;
-		answerEl.textContent = '';
+		answerEl.replaceChildren(Main.makeSpinner());
 		sourcesEl.replaceChildren();
 
 		status.textContent = 'Embedding query...';
@@ -151,11 +154,13 @@ class Main {
 		}));
 
 		const tGen = performance.now();
+		let fullAnswer = '';
 		await llm.generate(
 			query,
 			contextChunks,
 			(token) => {
-				answerEl.textContent += token;
+				fullAnswer += token;
+				CitationLinker.render(answerEl, fullAnswer, knownSources);
 			},
 			(msg) => {
 				status.textContent = `Loading LLM: ${msg}`;
@@ -164,6 +169,17 @@ class Main {
 		const genMs = (performance.now() - tGen).toFixed(0);
 		status.textContent = `Done — embed ${embedMs}ms, generate ${genMs}ms.`;
 		button.disabled = false;
+	}
+
+	static makeSpinner(): HTMLElement {
+		const spinner = document.createElement('div');
+		spinner.className = 'spinner-border spinner-border-sm text-secondary';
+		spinner.setAttribute('role', 'status');
+		const hidden = document.createElement('span');
+		hidden.className = 'visually-hidden';
+		hidden.textContent = 'Loading…';
+		spinner.appendChild(hidden);
+		return spinner;
 	}
 
 	static renderHits(container: HTMLElement, index: Index, hits: Hit[]): void {

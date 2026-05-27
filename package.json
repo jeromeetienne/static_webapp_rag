@@ -28,6 +28,7 @@
     },
     "dependencies": {
         "@huggingface/transformers": "^4.2.0",
-        "@mlc-ai/web-llm": "^0.2.83"
+        "@mlc-ai/web-llm": "^0.2.83",
+        "marked": "^18.0.4"
     }
 }

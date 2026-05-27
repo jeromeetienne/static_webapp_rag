@@ -22,7 +22,8 @@ The combination of **zero marginal cost + zero infrastructure + privacy by defau
 ┌─────────────────────────────┐         ┌──────────────────────────────┐
 │ BUILD-TIME (Node)           │         │ RUNTIME (Browser)            │
 │                             │         │                              │
-│  documents_original/*.md    │         │  user question               │
+│  web/public/                │         │  user question               │
+│    documents_original/*.md  │         │                              │
 │    │                        │         │    │                         │
 │    ▼                        │         │    ▼                         │
 │  chunk + embed              │  ====>  │  embed query (same model)    │
@@ -62,7 +63,7 @@ Same embedding model on both sides (`Xenova/all-MiniLM-L6-v2`, 384-dim) — vect
 
 ```sh
 npm install
-npm run build-index     # chunk + embed documents_original/ → web/public/documents_encoded/
+npm run build-index     # chunk + embed web/public/documents_original/ → web/public/documents_encoded/
 npm run dev             # http://localhost:5173
 ```
 
@@ -72,7 +73,7 @@ Open the landing page, click **Try the chat** to hit `/chat/` (the polished deep
 
 ### Adding your own documents
 
-Drop `.md` or `.txt` files into [documents_original/](documents_original/) and rerun:
+Drop `.md` or `.txt` files into [web/public/documents_original/](web/public/documents_original/) and rerun:
 
 ```sh
 npm run build-index
@@ -106,7 +107,7 @@ export const MOBILE_MODEL  = 'Qwen2.5-0.5B-Instruct-q4f16_1-MLC';
 ## Project layout
 
 ```
-documents_original/      # source docs (input to build-index)
+web/public/documents_original/  # source docs (input to build-index, also served at /documents_original/)
 scripts/
   chunk-docs-naive.ts    # CLI: print chunks (debugging)
   build-index.ts         # CLI: chunk + embed → web/public/documents_encoded/

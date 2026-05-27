@@ -8,6 +8,8 @@ import {
 	type ChatHistoryMessage,
 } from '../../_shared/src/llm.ts';
 import { Device } from '../../_shared/src/device.ts';
+import { CitationLinker } from '../../_shared/src/citation-linker.ts';
+import { marked } from 'marked';
 
 const TOP_K = 3;
 
@@ -17,6 +19,7 @@ class MainPro {
 	private readonly llm: Llm;
 	private readonly modelId: string;
 	private readonly history: ChatHistoryMessage[] = [];
+	private readonly knownSources: Set<string>;
 	private readonly messagesEl: HTMLElement;
 	private readonly inputEl: HTMLInputElement;
 	private readonly buttonEl: HTMLButtonElement;
@@ -25,6 +28,7 @@ class MainPro {
 
 	constructor(app: HTMLElement, index: Index) {
 		this.index = index;
+		this.knownSources = new Set(index.chunks.map((c) => c.source));
 		this.embedder = new QueryEmbedder();
 		this.modelId =
 			Device.isMobile() === true ? MOBILE_MODEL : DEFAULT_MODEL;
@@ -123,7 +127,7 @@ class MainPro {
 		this.history.push({ role: 'user', content: query });
 
 		const { bubble, textEl } = this.appendAssistantBubble();
-		textEl.textContent = '…';
+		textEl.replaceChildren(MainPro.makeSpinner());
 
 		this.statusEl.textContent = 'Embedding query…';
 		const tEmbed = performance.now();
@@ -133,7 +137,6 @@ class MainPro {
 		const hits = Retriever.topK(vec, this.index, TOP_K);
 
 		this.statusEl.textContent = `Retrieved ${hits.length} chunks (${embedMs}ms). Generating…`;
-		textEl.textContent = '';
 
 		const contextChunks = hits.map((h) => ({
 			text: this.index.chunks[h.index].text,
@@ -149,7 +152,8 @@ class MainPro {
 			contextChunks,
 			(token) => {
 				full += token;
-				textEl.textContent = full;
+				textEl.innerHTML = marked.parse(full, { async: false });
+				CitationLinker.linkInPlace(textEl, this.knownSources);
 				this.scrollToBottom();
 			},
 			(msg) => {
@@ -199,7 +203,6 @@ class MainPro {
 		bubble.style.maxWidth = '80%';
 
 		const textEl = document.createElement('div');
-		textEl.style.whiteSpace = 'pre-wrap';
 		bubble.appendChild(textEl);
 
 		row.appendChild(bubble);
@@ -211,6 +214,17 @@ class MainPro {
 
 	private scrollToBottom(): void {
 		this.messagesEl.scrollTop = this.messagesEl.scrollHeight;
+	}
+
+	static makeSpinner(): HTMLElement {
+		const spinner = document.createElement('div');
+		spinner.className = 'spinner-border spinner-border-sm text-secondary';
+		spinner.setAttribute('role', 'status');
+		const hidden = document.createElement('span');
+		hidden.className = 'visually-hidden';
+		hidden.textContent = 'Loading…';
+		spinner.appendChild(hidden);
+		return spinner;
 	}
 }
 

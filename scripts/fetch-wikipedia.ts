@@ -23,7 +23,7 @@ type ExtractsResponse = {
 	};
 };
 
-const DOCUMENTS_DIR = 'documents_original';
+const DOCUMENTS_DIR = 'web/public/documents_original';
 const USER_AGENT = 'static-webapp-rag/0.0.1 (https://github.com/jeromeetienne/static_webapp_rag)';
 
 /** CLI that searches Wikipedia and writes matching articles as markdown into the output directory. */
@@ -36,7 +36,7 @@ export class FetchWikipedia {
 		const program = new Command();
 		program
 			.name('fetch-wikipedia')
-			.description('Search Wikipedia and download articles as markdown into documents_original/')
+			.description('Search Wikipedia and download articles as markdown into web/public/documents_original/')
 			.argument('<query...>', 'search terms (joined with spaces)')
 			.option('-n, --limit <number>', 'number of articles to fetch', '5')
 			.option('-l, --lang <code>', 'Wikipedia language code', 'en')
